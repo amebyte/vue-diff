@@ -13,7 +13,7 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         // 对比是否一样
         if(isSameVnodeType(n1, n2)) {
             // 一样就递归调用
-            patch(n1, n2)
+            patch(n1.key)
         } else {
             // 如果不一样就退出循环
             break
