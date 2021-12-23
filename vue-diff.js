@@ -20,4 +20,23 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         }
         i ++ // 指针往后移动
     }
+
+    // *2. 从右边往左边查找，如果节点可以复用，则继续往左，不能就停止循环
+    while(i <= e1 && i <= e2) {
+        // 取出新老元素
+        const n1 = c1[e1]
+        const n2 = c2[e2]
+        // 对比是否一样
+        if(isSameVnodeType(n1, n2)) {
+            // 一样就递归调用
+            patch(n1.key)
+        } else {
+            // 如果不一样就退出循环
+            break
+        }
+        // 指针移动
+        e1--
+        e2--
+    }
+
 }
