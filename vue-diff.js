@@ -38,5 +38,16 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         e1--
         e2--
     }
-
+    
+    // *3. 老节点没了，新节点还有
+    if(i > e1) {
+        if(i <= e2) {
+            // 新节点可能存在多个，所以需要循环
+            while (i <= e2) {
+                const n2 = c2[i];
+                mountElement(n2.key);
+                i++;
+            }
+        }
+    }
 }
