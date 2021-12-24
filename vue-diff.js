@@ -49,5 +49,11 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
                 i++;
             }
         }
+    } else if(i > e2) {
+        while(i <= e1) {
+            const n1 = c1[i];
+            unmount(n1.key);
+            i++;
+        }
     }
 }
