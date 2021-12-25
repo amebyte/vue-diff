@@ -60,6 +60,12 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         // 中间对比
         let s1 = i // 老节点的开始
         let s2 = i // 新节点的开始
+
+        // 记录当前节点的总数量
+        const toBePactched = e2 - s2 + 1
+        // 记录当前处理的数量
+        let patched = 0
+
         // 新节点的映射表
         const keyToNewIndexMap = new Map()
         for(let i = s2; i <= e2; i++) {
@@ -70,6 +76,12 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         // 遍历老节点里面的key
         for(let i = s1; i <= e1; i++) {
             const prevChild = c1[i]
+            // 如果当前处理的数量已经大于当前节点总数，那么旧节点直接删除就可以了
+            if(patched >= toBePactched) {
+                unmount(prevChild.key)
+                continue
+            }
+
             let newIndex
             if(prevChild.key !== null || prevChild.key !== undefined) {
                 // 如果用户设置了key那么就去映射表里面查询
@@ -90,6 +102,7 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
             } else {
                 // 找到就递归调用
                 patch(c2[newIndex].key)
+                patched++
             }
         }
     }
