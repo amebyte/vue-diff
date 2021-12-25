@@ -135,7 +135,7 @@ describe('Vue VNode Diff', () => {
     expect(unmount.mock.calls.length).toBe(1)
   })
 
-  it('5. 中间对比的移动逻辑：节点存在新的和老的里面，但是位置变了', () => {
+  it('6. 中间对比的移动逻辑：节点存在新的和老的里面，但是位置变了', () => {
     const mountElement = jest.fn()
     const patch = jest.fn()
     const unmount = jest.fn()
@@ -183,6 +183,52 @@ describe('Vue VNode Diff', () => {
     expect(move.mock.calls[0][1]).toBe('c')
     // e在新的里面需要移动
     expect(move.mock.calls.length).toBe(1)
+  })
+
+  it('7. 中间对比的创建逻辑：节点存在新节点里，但旧节点里没有，就需要创建它', () => {
+    const mountElement = jest.fn()
+    const patch = jest.fn()
+    const unmount = jest.fn()
+    const move = jest.fn()
+    const { vueDiff } = require('../vue-diff')
+    vueDiff(
+      [
+        { key: 'a' },
+        { key: 'b' },
+        { key: 'c' },
+        { key: 'd' },
+        { key: 'f' },
+        { key: 'g' }
+      ],
+      [
+        { key: 'a' },
+        { key: 'b' },
+        { key: 'e' },
+        { key: 'd' },
+        { key: 'c' },
+        { key: 'f' },
+        { key: 'g' }
+      ],
+      {
+        mountElement,
+        patch,
+        unmount,
+        move
+      }
+    )
+    // 第一次调用次数
+    expect(patch.mock.calls.length).toBe(6)
+    // 第一次调用的第一个参数
+    expect(patch.mock.calls[0][0]).toBe('a')
+    expect(patch.mock.calls[1][0]).toBe('b')
+    expect(patch.mock.calls[2][0]).toBe('g')
+    expect(patch.mock.calls[3][0]).toBe('f')
+    expect(patch.mock.calls[4][0]).toBe('c')
+    expect(patch.mock.calls[5][0]).toBe('d')
+    // e在新的里面需要创建
+    expect(mountElement.mock.calls[0][0]).toBe('e')
+    // e在新的里面需要创建
+    expect(mountElement.mock.calls.length).toBe(1)
   })
 
 })

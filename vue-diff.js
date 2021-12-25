@@ -81,7 +81,6 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
       const nextChild = c2[i]
       keyToNewIndexMap.set(nextChild.key, i)
     }
-
     // 遍历老节点里面的key
     for (let i = s1; i <= e1; i++) {
       const prevChild = c1[i]
@@ -116,7 +115,6 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
             // 如果旧的节点在新的节点里，前一个索引没有比后面一个索引大就需要移动
             moved = true
         }
-
         // 0 代表老的节点在新的节点里面是不存在的，所以要 +1
         newIndexToOldIndexMap[newIndex - s2] = i + 1
 
@@ -124,26 +122,28 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         patch(c2[newIndex].key)
         patched++
       }
+    }
 
-      const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
+    const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
 
-      // 因为调用的DOM API 的insertBefore是需要插入到一个元素的前面，所以要使用倒序排列
-      let j = increasingNewIndexSequence.length - 1
-      for(let i = toBePactched -1; i >= 0; i--) {
-        // 求出当前的节点
-        const nextIndex = i + s2
-        const nextChild = c2[nextIndex]
-        // 求出当前锚点
-        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1] : null
-        // 需要移动的时候再移动
-        if(moved) {
-            if(j < 0 || i !== increasingNewIndexSequence[j]) {
-                // 如果不在子序列里面就需要移动位置
-                move(nextChild.key, anchor.key)
-            } else {
-                j--
-            }
-        }
+    // 因为调用的DOM API 的insertBefore是需要插入到一个元素的前面，所以要使用倒序排列
+    let j = increasingNewIndexSequence.length - 1
+    for(let i = toBePactched -1; i >= 0; i--) {
+      // 求出当前的节点
+      const nextIndex = i + s2
+      const nextChild = c2[nextIndex]
+      // 求出当前锚点
+      const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1] : null
+      
+      if(newIndexToOldIndexMap[i] === 0) {// 创建
+          mountElement(nextChild.key)
+      } else if(moved) { // 需要移动的时候再移动
+          if(j < 0 || i !== increasingNewIndexSequence[j]) {
+              // 如果不在子序列里面就需要移动位置
+              move(nextChild.key, anchor.key)
+          } else {
+              j--
+          }
       }
     }
   }
