@@ -49,11 +49,48 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
                 i++;
             }
         }
+    // *4. 老节点还有，新节点没了
     } else if(i > e2) {
         while(i <= e1) {
             const n1 = c1[i];
             unmount(n1.key);
             i++;
+        }
+    } else {
+        // 中间对比
+        let s1 = i // 老节点的开始
+        let s2 = i // 新节点的开始
+        // 新节点的映射表
+        const keyToNewIndexMap = new Map()
+        for(let i = s2; i <= e2; i++) {
+            const nextChild = c2[i]
+            keyToNewIndexMap.set(nextChild.key, i)
+        }
+
+        // 遍历老节点里面的key
+        for(let i = s1; i <= e1; i++) {
+            const prevChild = c1[i]
+            let newIndex
+            if(prevChild.key !== null || prevChild.key !== undefined) {
+                // 如果用户设置了key那么就去映射表里面查询
+                newIndex = keyToNewIndexMap.get(prevChild.key)
+            } else {
+                // 如果用户没有设置key，那么就遍历所有，时间复杂度为O(n)
+                for(let j = s2; j < e2; j++) {
+                    if(isSameVnodeType(prevChild, c2[j])) {
+                        newIndex = j
+                        break
+                    }
+                }
+            }
+            // 如果在新的节点里面没有找到
+            if(newIndex === undefined) {
+                // 没有找到就删除
+                unmount(prevChild.key)
+            } else {
+                // 找到就递归调用
+                patch(c2[newIndex].key)
+            }
         }
     }
 }
