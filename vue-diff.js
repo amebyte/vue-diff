@@ -2,9 +2,10 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
   function isSameVnodeType(n1, n2) {
     return n1.key === n2.key //&& n1.type === n2.type;
   }
+  const l2 = c2.length
   let i = 0
   let e1 = c1.length - 1
-  let e2 = c2.length - 1
+  let e2 = l2 - 1
   // *1. 从左边往右查找，如果节点可以复用，则继续往右，不能就停止循环
   while (i <= e1 && i <= e2) {
     // 通过上面分析我们可以知道循环条件
@@ -71,6 +72,9 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
     const keyToNewIndexMap = new Map()
 
     const newIndexToOldIndexMap = new Array(toBePactched) // 创建一个定长数组，定长的数组性能是最好的
+    // 是否需要移动
+    let moved = false
+    let maxNewIndexSoFar = 0
     for (let i = 0; i < toBePactched; i++) newIndexToOldIndexMap[i] = 0
 
     for (let i = s2; i <= e2; i++) {
@@ -105,6 +109,14 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         // 没有找到就删除
         unmount(prevChild.key)
       } else {
+
+        if(newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+        } else {
+            // 如果旧的节点在新的节点里，前一个索引没有比后面一个索引大就需要移动
+            moved = true
+        }
+
         // 0 代表老的节点在新的节点里面是不存在的，所以要 +1
         newIndexToOldIndexMap[newIndex - s2] = i + 1
 
@@ -113,24 +125,26 @@ exports.vueDiff = (c1, c2, { mountElement, patch, unmount, move }) => {
         patched++
       }
 
-      const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap)
+      const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexMap) : []
 
       // 因为调用的DOM API 的insertBefore是需要插入到一个元素的前面，所以要使用倒序排列
-      let j = increasingNewIndexSequence.length
+      let j = increasingNewIndexSequence.length - 1
       for(let i = toBePactched -1; i >= 0; i--) {
         // 求出当前的节点
         const nextIndex = i + s2
         const nextChild = c2[nextIndex]
         // 求出当前锚点
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1] : null
-        if(i !== increasingNewIndexSequence[j]) {
-            // 如果不在子序列里面就需要移动位置
-            move(anchor.key)
-        } else {
-            j--
+        // 需要移动的时候再移动
+        if(moved) {
+            if(j < 0 || i !== increasingNewIndexSequence[j]) {
+                // 如果不在子序列里面就需要移动位置
+                move(nextChild.key, anchor.key)
+            } else {
+                j--
+            }
         }
       }
-
     }
   }
 
